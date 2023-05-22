@@ -20,6 +20,7 @@ use Neos\SwiftMailer\Message as SwiftMailerMessage;
 use Neos\Utility\Arrays;
 use Neos\Utility\ObjectAccess;
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\ResourceManagement\ResourceManager;
 
 /**
  * This finisher sends an email to one or more recipients
@@ -62,6 +63,12 @@ class EmailFinisher extends AbstractFinisher
     const FORMAT_MULTIPART = 'multipart';
     const CONTENT_TYPE_PLAINTEXT = 'text/plain';
     const CONTENT_TYPE_HTML = 'text/html';
+    
+    /**
+     * @Flow\Inject
+     * @var ResourceManager
+     */
+    protected $resourceManager;
 
     /**
      * @var Service
@@ -277,8 +284,8 @@ class EmailFinisher extends AbstractFinisher
         $attachmentConfigurations = $this->parseOption('attachments');
         if (is_array($attachmentConfigurations)) {
             foreach ($attachmentConfigurations as $attachmentConfiguration) {
-                if (isset($attachmentConfiguration['resource'])) {
-                    $mail->attach(\Swift_Attachment::fromPath($attachmentConfiguration['resource']));
+                if ($attachmentConfiguration->getResource() !== null) {
+                    $mail->attach(new \Swift_Attachment(stream_get_contents($attachmentConfiguration->getResource()->getStream()), $attachmentConfiguration->getResource()->getFilename(), $attachmentConfiguration->getResource()->getMediaType()));
                     continue;
                 }
                 if (!isset($attachmentConfiguration['formElement'])) {
